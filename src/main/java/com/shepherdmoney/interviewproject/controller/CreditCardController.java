@@ -37,7 +37,8 @@ public class CreditCardController {
         String issuanceBank = payload.getCardIssuanceBank();
         String number = payload.getCardNumber();
 
-        if(!userRepository.existsById(userId) || creditCardRepository.existsByNumber(number)){
+        if(issuanceBank == null || number == null || issuanceBank.trim().isEmpty() || number.trim().isEmpty() ||
+            !userRepository.existsById(userId) || creditCardRepository.existsByNumber(number)){
             return ResponseEntity.badRequest().build();
         }
 
