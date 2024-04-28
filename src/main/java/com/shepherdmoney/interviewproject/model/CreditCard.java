@@ -35,7 +35,7 @@ public class CreditCard {
     // Some field here <> owner;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "userId")
     private User user;
 
     // TODO: Credit card's balance history. It is a requirement that the dates in the balanceHistory 

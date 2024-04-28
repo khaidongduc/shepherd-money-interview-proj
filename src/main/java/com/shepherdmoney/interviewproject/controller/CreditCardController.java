@@ -13,8 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 
 @RestController
@@ -57,7 +55,14 @@ public class CreditCardController {
     public ResponseEntity<List<CreditCardView>> getAllCardOfUser(@RequestParam int userId) {
         // TODO: return a list of all credit card associated with the given userId, using CreditCardView class
         //       if the user has no credit card, return empty list, never return null
-        return null;
+
+        if(!userRepository.existsById(userId)){
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<CreditCardView> creditCards = creditCardRepository.findAllByUserId(userId)
+            .stream().map(x -> new CreditCardView(x.getIssuanceBank(), x.getNumber())).toList();
+        return ResponseEntity.ok().body(creditCards);
     }
 
     @GetMapping("/credit-card:user-id")
