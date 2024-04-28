@@ -1,8 +1,14 @@
 package com.shepherdmoney.interviewproject.controller;
 
+import com.shepherdmoney.interviewproject.model.CreditCard;
+import com.shepherdmoney.interviewproject.model.User;
+import com.shepherdmoney.interviewproject.repository.CreditCardRepository;
+import com.shepherdmoney.interviewproject.repository.UserRepository;
 import com.shepherdmoney.interviewproject.vo.request.AddCreditCardToUserPayload;
 import com.shepherdmoney.interviewproject.vo.request.UpdateBalancePayload;
 import com.shepherdmoney.interviewproject.vo.response.CreditCardView;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +21,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class CreditCardController {
 
     // TODO: wire in CreditCard repository here (~1 line)
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private CreditCardRepository creditCardRepository;
 
     @PostMapping("/credit-card")
     public ResponseEntity<Integer> addCreditCardToUser(@RequestBody AddCreditCardToUserPayload payload) {
@@ -22,7 +32,24 @@ public class CreditCardController {
         //       Return 200 OK with the credit card id if the user exists and credit card is successfully associated with the user
         //       Return other appropriate response code for other exception cases
         //       Do not worry about validating the card number, assume card number could be any arbitrary format and length
-        return null;
+
+        int userId = payload.getUserId();
+        String issuanceBank = payload.getCardIssuanceBank();
+        String number = payload.getCardNumber();
+
+        if(!userRepository.existsById(userId) || creditCardRepository.existsByNumber(number)){
+            return ResponseEntity.badRequest().build();
+        }
+
+        CreditCard creditCard = new CreditCard();
+        creditCard.setIssuanceBank(issuanceBank);
+        creditCard.setNumber(number);
+        User user = new User();
+        user.setId(userId);
+        creditCard.setUser(user);
+        creditCardRepository.save(creditCard);
+
+        return ResponseEntity.ok().body(creditCard.getId());
     }
 
     @GetMapping("/credit-card:all")
