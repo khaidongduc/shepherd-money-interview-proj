@@ -9,6 +9,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Column;
 
 @Entity
 @Getter
@@ -19,14 +22,21 @@ public class CreditCard {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id")
     private int id;
 
+    @Column(name = "issuanceBank")
     private String issuanceBank;
 
+    @Column(name = "number")
     private String number;
 
     // TODO: Credit card's owner. For detailed hint, please see User class
     // Some field here <> owner;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
     // TODO: Credit card's balance history. It is a requirement that the dates in the balanceHistory 
     //       list must be in chronological order, with the most recent date appearing first in the list. 
