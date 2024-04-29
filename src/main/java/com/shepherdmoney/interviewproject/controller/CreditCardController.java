@@ -1,7 +1,9 @@
 package com.shepherdmoney.interviewproject.controller;
 
+import com.shepherdmoney.interviewproject.model.BalanceHistory;
 import com.shepherdmoney.interviewproject.model.CreditCard;
 import com.shepherdmoney.interviewproject.model.User;
+import com.shepherdmoney.interviewproject.repository.BalanceHistoryRepository;
 import com.shepherdmoney.interviewproject.repository.CreditCardRepository;
 import com.shepherdmoney.interviewproject.repository.UserRepository;
 import com.shepherdmoney.interviewproject.vo.request.AddCreditCardToUserPayload;
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -24,6 +27,9 @@ public class CreditCardController {
     private UserRepository userRepository;
     @Autowired
     private CreditCardRepository creditCardRepository;
+    @Autowired
+    private BalanceHistoryRepository balanceHistoryRepository;
+
 
     @PostMapping("/credit-card")
     public ResponseEntity<Integer> addCreditCardToUser(@RequestBody AddCreditCardToUserPayload payload) {
@@ -94,17 +100,19 @@ public class CreditCardController {
         //        is not associated with a card.
         
         // check if all balance payload exists
+        List<BalanceHistory> balanceHistories = new ArrayList<>();
         for (UpdateBalancePayload load : payload){
             String number = load.getCreditCardNumber();
             if(!creditCardRepository.existsByNumber(number)){
                 return ResponseEntity.badRequest().build();
             }
+            BalanceHistory history = new BalanceHistory();
+            history.setDate(load.getBalanceDate());
+            history.setBalance(load.getBalanceAmount());
+            balanceHistories.add(history);
         }
-
-        
-
-
-        return null;
+        balanceHistoryRepository.saveAll(balanceHistories);
+        return ResponseEntity.ok().build();
     }
     
 }

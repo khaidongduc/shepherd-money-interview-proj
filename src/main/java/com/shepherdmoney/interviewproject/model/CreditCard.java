@@ -65,5 +65,5 @@ public class CreditCard {
 
     @OneToMany(cascade = CascadeType.ALL)
     private TreeSet<BalanceHistory> balanceHistories;
-
+    
 }
