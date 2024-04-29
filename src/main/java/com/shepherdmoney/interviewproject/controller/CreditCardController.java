@@ -123,6 +123,8 @@ public class CreditCardController {
 
         return ResponseEntity.ok().build();
     }
+
+    // for updating a single credit card history, make sure all in payload is of the same credit card.
     private void updateCardBalance(String cardNumber, List<UpdateBalancePayload> payload){
         CreditCard creditCard = creditCardRepository.getReferenceByNumber(cardNumber);
         Iterable<BalanceHistory> storedHistories = creditCard.getBalanceHistories();
