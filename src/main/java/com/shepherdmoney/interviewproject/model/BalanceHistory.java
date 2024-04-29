@@ -1,6 +1,7 @@
 package com.shepherdmoney.interviewproject.model;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -13,7 +14,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @RequiredArgsConstructor
-public class BalanceHistory {
+public class BalanceHistory implements Comparable<BalanceHistory> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -27,8 +28,9 @@ public class BalanceHistory {
     @JoinColumn(name = "creditCardId")
     CreditCard creditCard;
 
-    public int compareTo(BalanceHistory x) {
-        return this.date.compareTo(x.date);
-    }
 
+    @Override
+    public int compareTo(BalanceHistory o) {
+        return this.date.compareTo(o.date);
+    }
 }

@@ -12,6 +12,7 @@ import com.shepherdmoney.interviewproject.vo.response.CreditCardView;
 
 import com.sun.source.tree.Tree;
 import org.h2.command.dml.Set;
+import org.hibernate.collection.spi.PersistentSortedSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.core.Local;
 import org.springframework.http.ResponseEntity;
@@ -19,10 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.temporal.TemporalAmount;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.TreeSet;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -179,7 +177,8 @@ public class CreditCardController {
             }
         }
         // store afterward
-        creditCard.setBalanceHistories(histories.values().stream().collect(Collectors.toSet()));
+        SortedSet<BalanceHistory> res = new TreeSet<>(histories.values());
+        creditCard.setBalanceHistories(res);
         balanceHistoryRepository.saveAll(creditCard.getBalanceHistories());
     }
 

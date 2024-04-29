@@ -14,7 +14,11 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import org.hibernate.collection.spi.PersistentSortedSet;
+
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 @Entity
 @Getter
@@ -63,6 +67,6 @@ public class CreditCard {
 
     // use tree set to fulfill the above condition
     @OneToMany(cascade = CascadeType.ALL)
-    private Set<BalanceHistory> balanceHistories;
+    private SortedSet<BalanceHistory> balanceHistories;
 
 }
