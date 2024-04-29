@@ -10,6 +10,7 @@ import com.shepherdmoney.interviewproject.vo.request.AddCreditCardToUserPayload;
 import com.shepherdmoney.interviewproject.vo.request.UpdateBalancePayload;
 import com.shepherdmoney.interviewproject.vo.response.CreditCardView;
 
+import com.sun.source.tree.Tree;
 import org.h2.command.dml.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.core.Local;
@@ -103,37 +104,59 @@ public class CreditCardController {
         //      Return 200 OK if update is done and successful, 400 Bad Request if the given card number
         //        is not associated with a card.
 
-        String number = payload[0].getCreditCardNumber();
-        CreditCard creditCard = creditCardRepository.getReferenceByNumber(number);
+        TreeMap<String, List<UpdateBalancePayload>> cardsUpdates = new TreeMap<>();
+        for (UpdateBalancePayload load : payload) {
+            String cardNumber = load.getCreditCardNumber();
+            if (!creditCardRepository.existsByNumber(cardNumber)) {
+                return ResponseEntity.badRequest().build();
+            }
+            // filter updates into corresponding cards
+            if (!cardsUpdates.containsKey(cardNumber)) {
+                cardsUpdates.put(cardNumber, new ArrayList<>());
+            }
+            cardsUpdates.get(cardNumber).add(load);
+        }
+
+        for (String number: cardsUpdates.keySet()) {
+            updateCardBalance(number, cardsUpdates.get(number));
+        }
+
+        return ResponseEntity.ok().build();
+    }
+    private void updateCardBalance(String cardNumber, List<UpdateBalancePayload> payload){
+        CreditCard creditCard = creditCardRepository.getReferenceByNumber(cardNumber);
         Iterable<BalanceHistory> storedHistories = creditCard.getBalanceHistories();
 
         // populate history with previous histories for update
         TreeMap<LocalDate, BalanceHistory> histories = new TreeMap<>();
-        for(BalanceHistory h : storedHistories){
+        for (BalanceHistory h : storedHistories) {
             histories.put(h.getDate(), h);
         }
         LocalDate today = LocalDate.now();
-        if(!histories.isEmpty()){
+        if (!histories.isEmpty()) {
             LocalDate startDate = histories.firstKey();
-            for (LocalDate i = startDate; i.isBefore(today) || i.isEqual(today); i = i.plusDays(1)) {
-                if (!histories.containsKey(i)) {
-                    double balance = histories.get(i.minusDays(1)).getBalance();
-                    BalanceHistory h = new BalanceHistory();
-                    h.setCreditCard(creditCard);
-                    h.setDate(i);
-                    h.setBalance(balance);
-                    histories.put(i, h);
-                }
+            for (LocalDate i = startDate;
+                    i.isBefore(today) || i.isEqual(today);
+                        i = i.plusDays(1)) {
+                if (histories.containsKey(i)) // don't need to populate, already exist
+                    continue;
+                double balance = histories.get(i.minusDays(1)).getBalance();
+                BalanceHistory h = new BalanceHistory();
+                h.setCreditCard(creditCard);
+                h.setDate(i);
+                h.setBalance(balance);
+                histories.put(i, h);
             }
         }
         // adding new payload
-        for(UpdateBalancePayload load : payload){
+        for (UpdateBalancePayload load : payload) {
             LocalDate date = load.getBalanceDate();
             double balance = load.getBalanceAmount();
-            if(!histories.containsKey(date)){
+            if (!histories.containsKey(date)) {
                 // put in date from before the earliest known date
-                for(LocalDate i = date; !histories.containsKey(i) && (i.isBefore(today) || i.isEqual(today))
-                        ; i = i.plusDays(1)){
+                for (LocalDate i = date; !histories.containsKey(i)
+                        && (i.isBefore(today) || i.isEqual(today));
+                            i = i.plusDays(1)) {
                     BalanceHistory h = new BalanceHistory();
                     h.setCreditCard(creditCard);
                     h.setDate(i);
@@ -142,10 +165,10 @@ public class CreditCardController {
                 }
             } else {
                 double prevBalance = histories.get(date).getBalance();
-                if(balance != prevBalance){
+                if (balance != prevBalance) {
                     // add the different to every other following day
                     double diff = balance - prevBalance;
-                    for(LocalDate i = date; i.isBefore(today) || i.isEqual(today); i = i.plusDays(1)){
+                    for (LocalDate i = date; i.isBefore(today) || i.isEqual(today); i = i.plusDays(1)) {
                         BalanceHistory balanceHistory = histories.get(i);
                         balanceHistory.setBalance(balanceHistory.getBalance() + diff);
                     }
@@ -155,8 +178,8 @@ public class CreditCardController {
         // store afterward
         creditCard.setBalanceHistories(histories.values().stream().toList());
         balanceHistoryRepository.saveAll(creditCard.getBalanceHistories());
-
-        return ResponseEntity.ok().build();
     }
-    
+
 }
+    
+
