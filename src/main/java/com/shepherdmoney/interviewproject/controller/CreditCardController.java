@@ -3,6 +3,7 @@ package com.shepherdmoney.interviewproject.controller;
 import com.shepherdmoney.interviewproject.model.BalanceHistory;
 import com.shepherdmoney.interviewproject.model.CreditCard;
 import com.shepherdmoney.interviewproject.model.User;
+import com.shepherdmoney.interviewproject.repository.BalanceHistoryRepository;
 import com.shepherdmoney.interviewproject.repository.CreditCardRepository;
 import com.shepherdmoney.interviewproject.repository.UserRepository;
 import com.shepherdmoney.interviewproject.vo.request.AddCreditCardToUserPayload;
@@ -11,9 +12,12 @@ import com.shepherdmoney.interviewproject.vo.response.CreditCardView;
 
 import org.h2.command.dml.Set;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cglib.core.Local;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
@@ -28,6 +32,8 @@ public class CreditCardController {
     @Autowired
     private CreditCardRepository creditCardRepository;
 
+    @Autowired
+    private BalanceHistoryRepository balanceHistoryRepository;
 
     @PostMapping("/credit-card")
     public ResponseEntity<Integer> addCreditCardToUser(@RequestBody AddCreditCardToUserPayload payload) {
@@ -85,7 +91,7 @@ public class CreditCardController {
     }
 
     @PostMapping("/credit-card:update-balance")
-    public ResponseEntity<Integer> postMethodName(@RequestBody UpdateBalancePayload[] payload) {
+    public ResponseEntity<Integer> updateCreditCardsBalance(@RequestBody UpdateBalancePayload[] payload) {
         //TODO: Given a list of transactions, update credit cards' balance history.
         //      1. For the balance history in the credit card
         //      2. If there are gaps between two balance dates, fill the empty date with the balance of the previous date
@@ -96,10 +102,59 @@ public class CreditCardController {
         //      [{date: 4/12, balance: 120}, {date: 4/11, balance: 110}, {date: 4/10, balance: 100}]
         //      Return 200 OK if update is done and successful, 400 Bad Request if the given card number
         //        is not associated with a card.
-        
-        // check if all balance payload exists
+
         String number = payload[0].getCreditCardNumber();
-        Iterable<BalanceHistory> bIterable = creditCardRepository.getReferenceByNumber(number).getBalanceHistories();
+        CreditCard creditCard = creditCardRepository.getReferenceByNumber(number);
+        Iterable<BalanceHistory> storedHistories = creditCard.getBalanceHistories();
+
+        // populate history with previous histories for update
+        TreeMap<LocalDate, BalanceHistory> histories = new TreeMap<>();
+        for(BalanceHistory h : storedHistories){
+            histories.put(h.getDate(), h);
+        }
+        LocalDate today = LocalDate.now();
+        if(!histories.isEmpty()){
+            LocalDate startDate = histories.firstKey();
+            for (LocalDate i = startDate; i.isBefore(today) || i.isEqual(today); i = i.plusDays(1)) {
+                if (!histories.containsKey(i)) {
+                    double balance = histories.get(i.minusDays(1)).getBalance();
+                    BalanceHistory h = new BalanceHistory();
+                    h.setCreditCard(creditCard);
+                    h.setDate(i);
+                    h.setBalance(balance);
+                    histories.put(i, h);
+                }
+            }
+        }
+        // adding new payload
+        for(UpdateBalancePayload load : payload){
+            LocalDate date = load.getBalanceDate();
+            double balance = load.getBalanceAmount();
+            if(!histories.containsKey(date)){
+                // put in date from before the earliest known date
+                for(LocalDate i = date; !histories.containsKey(i) && (i.isBefore(today) || i.isEqual(today))
+                        ; i = i.plusDays(1)){
+                    BalanceHistory h = new BalanceHistory();
+                    h.setCreditCard(creditCard);
+                    h.setDate(i);
+                    h.setBalance(balance);
+                    histories.put(i, h);
+                }
+            } else {
+                double prevBalance = histories.get(date).getBalance();
+                if(balance != prevBalance){
+                    // add the different to every other following day
+                    double diff = balance - prevBalance;
+                    for(LocalDate i = date; i.isBefore(today) || i.isEqual(today); i = i.plusDays(1)){
+                        BalanceHistory balanceHistory = histories.get(i);
+                        balanceHistory.setBalance(balanceHistory.getBalance() + diff);
+                    }
+                }
+            }
+        }
+        // store afterward
+        creditCard.setBalanceHistories(histories.values().stream().toList());
+        balanceHistoryRepository.saveAll(creditCard.getBalanceHistories());
 
         return ResponseEntity.ok().build();
     }
