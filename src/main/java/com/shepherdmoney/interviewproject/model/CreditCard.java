@@ -14,7 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
-import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -61,7 +61,8 @@ public class CreditCard {
     //        5. It is possible that there are gaps in between dates (note the 04-13 and 04-16)
     //        6. In the condition that there are gaps, retrieval of "closest" balance date should also be fast. Aka, given 4-15, return 4-16 entry tuple
 
+    // use tree set to fulfill the above condition
     @OneToMany(cascade = CascadeType.ALL)
-    private List<BalanceHistory> balanceHistories;
+    private Set<BalanceHistory> balanceHistories;
 
 }

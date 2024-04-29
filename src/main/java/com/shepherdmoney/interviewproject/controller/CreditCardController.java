@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 @RestController
 public class CreditCardController {
@@ -178,7 +179,7 @@ public class CreditCardController {
             }
         }
         // store afterward
-        creditCard.setBalanceHistories(histories.values().stream().toList());
+        creditCard.setBalanceHistories(histories.values().stream().collect(Collectors.toSet()));
         balanceHistoryRepository.saveAll(creditCard.getBalanceHistories());
     }
 
