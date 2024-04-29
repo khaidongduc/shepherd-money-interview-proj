@@ -69,7 +69,14 @@ public class CreditCardController {
     public ResponseEntity<Integer> getUserIdForCreditCard(@RequestParam String creditCardNumber) {
         // TODO: Given a credit card number, efficiently find whether there is a user associated with the credit card
         //       If so, return the user id in a 200 OK response. If no such user exists, return 400 Bad Request
-        return null;
+
+        if(!creditCardRepository.existsByNumber(creditCardNumber)){
+            return ResponseEntity.badRequest().build();
+        }
+        // I am not sure when an user would not exist without a card. I implemented CASCADE behavior,
+        // so removing a user will delete all of their cards
+        CreditCard creditCard = creditCardRepository.getReferenceByNumber(creditCardNumber);
+        return ResponseEntity.ok().body(creditCard.getUser().getId());
     }
 
     // @PostMapping("/credit-card:update-balance")

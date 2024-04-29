@@ -18,4 +18,6 @@ public interface CreditCardRepository extends JpaRepository<CreditCard, Integer>
 
     @Query("SELECT * FROM CreditCard WHERE userId=%")
     List<CreditCard> findAllByUserId(int userId);
+
+    CreditCard getReferenceByNumber(String number);
 }

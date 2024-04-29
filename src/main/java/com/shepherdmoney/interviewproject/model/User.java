@@ -7,6 +7,8 @@ import lombok.Setter;
 import lombok.ToString;
 import java.util.List;
 
+import org.hibernate.annotations.Cascade;
+
 @Entity
 @Getter
 @Setter
@@ -29,6 +31,6 @@ public class User {
     // TODO: User's credit card
     // HINT: A user can have one or more, or none at all. We want to be able to query credit cards by user
     //       and user by a credit card.
-    @OneToMany
+    @OneToMany(cascade = CascadeType.ALL)
     List<CreditCard> creditCards;
 }
